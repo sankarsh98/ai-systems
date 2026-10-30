@@ -19,15 +19,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npx quartz plugin install
+      - run: npx quartz build -d docs
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build
+          path: public
 
   deploy:
     needs: build

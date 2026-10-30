@@ -1,0 +1,55 @@
+---
+title: "1. Why inference is hard"
+---
+
+Training a model happens once. **Inference**, answering requests, happens billions of times. For most deployed models, inference is where the money goes.
+
+## Two phases
+
+When you send a prompt, the model works in two very different phases:
+
+| Phase | What happens | Parallelism | Bottleneck |
+|---|---|---|---|
+| **Prefill** | Process the whole prompt | All prompt tokens at once | Compute (math throughput) |
+| **Decode** | Generate the answer, one token at a time | One new token per step | Memory bandwidth |
+
+**Decode is the slow part, and it's slow for a surprising reason.** To produce each new token, the hardware must read essentially *all* of the model's weights from memory, do a small amount of math with them, and throw most of that work away. The chip spends its time waiting for data, not calculating.
+
+## A back-of-envelope example
+
+Take a 7-billion-parameter model stored in 16-bit numbers (2 bytes each):
+
+```text
+weights = 7e9 params × 2 bytes = 14 GB
+```
+
+Each decoded token (at batch size 1) must stream those 14 GB through the chip. If the memory can deliver 1 TB/s, then:
+
+```text
+time per token ≥ 14 GB / 1000 GB/s = 14 ms   →   at most about 70 tokens/s
+```
+
+No amount of extra compute fixes that. The limit is bytes moved per token. That one idea explains most inference tricks:
+
+| Trick | How it helps |
+|---|---|
+| **KV cache** | Avoids redoing work for earlier tokens (lesson 2) |
+| **Quantization** | Fewer bytes per weight, so fewer bytes to move (lesson 3) |
+| **Speculative decoding** | Several tokens per pass over the weights (lesson 4) |
+| **Batching** | Many requests share one pass over the weights |
+
+> [!info] About the numbers
+> The 1 TB/s figure is an illustrative round number, not any specific chip. Real hardware varies a lot. The *structure* of the calculation is what matters.
+
+## The metrics people care about
+
+- **Time to first token (TTFT):** mostly prefill. Matters for responsiveness.
+- **Tokens per second:** mostly decode. Matters for long answers.
+- **Throughput:** total tokens per second across all users. Matters for cost.
+- **Cost per token:** hardware cost divided by throughput.
+
+Optimizations often trade one for another. Batching raises throughput but can raise latency for each user.
+
+## Check yourself
+
+If you halve the bytes per weight, what happens to the best-case decode speed in the example above? What happens to the prefill time? (Hint: which phase was limited by bytes moved?)

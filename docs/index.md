@@ -1,0 +1,40 @@
+---
+title: "AI Systems"
+---
+
+Two ideas decide what AI can actually do in the next few years, and they sit *around* the model rather than inside it:
+
+| Track | Question | Why it matters |
+|---|---|---|
+| **A. Agents, tools and MCP** | How does a model act on the world instead of just talking? | Most useful AI products are becoming loops that call tools. |
+| **B. Inference efficiency** | How do you run a big model fast and cheaply? | Cost and speed decide what's affordable to ship, and what runs on a laptop or phone. |
+
+Every lesson has code you can run. Nothing needs a GPU or an API key, except one clearly marked optional step.
+
+## Setup
+
+```bash
+git clone https://github.com/sankarsh98/ai-systems.git
+cd ai-systems
+uv venv && uv pip install numpy mcp anthropic
+```
+
+## How to use this course
+
+1. Read the lesson.
+2. Run the script that goes with it, and compare your output with the output shown.
+3. Do the experiment at the end. Predict first, then run.
+
+> [!info] What the numbers mean
+> Timings and error figures on these pages are from small NumPy toys on one CPU. They show **shapes** (what grows, what shrinks), not production benchmarks. Where a claim is about real systems, the lesson says so.
+
+## Prerequisites
+
+Comfortable reading Python. You don't need to know PyTorch, and the linear algebra stays at "multiply a matrix by a vector".
+
+## More from this series
+
+- [Thoughts: the notes garden](https://sankarsh98.github.io/garden/)
+- [How Computers Play Chess](https://sankarsh98.github.io/chess-brains/): build a tiny chess engine
+- [The AI Course](https://sankarsh98.github.io/ai-course/): 32 modules from foundations to frontier topics
+- [All sites](https://sankarsh98.github.io/)

@@ -1,0 +1,26 @@
+---
+title: "Where to go next"
+---
+
+## Things this course skipped on purpose
+
+- **Continuous batching and paged attention.** How servers share one GPU across many requests, and how they avoid wasting KV-cache memory. Look up vLLM's PagedAttention paper.
+- **Mixture of experts (MoE).** Models that activate only some of their parameters per token, which lowers the compute per token while keeping a large total capacity.
+- **FlashAttention.** Reorders attention computation to use memory bandwidth better.
+- **Multi-agent systems and evaluation.** Several agents splitting work, and how to measure whether an agent really got better.
+- **Prompt caching.** Reusing the processed prefix of a prompt across requests, which is the KV cache idea applied at the API level.
+
+## Projects to try
+
+1. **Make the toy agent real.** Set `ANTHROPIC_API_KEY`, run `python agent_loop.py --real`, and add a third tool such as a file search over your own notes.
+2. **Serve your notes over MCP.** Replace the `NOTES` dictionary in `tools.py` with files from a folder, and connect the server to an MCP-capable client.
+3. **Quantize something real.** Run a small open model in 8-bit and 4-bit and compare memory use, speed and answer quality.
+4. **Extend the speculative-decoding toy** to count the draft model's cost, and find the `gamma` that gives the best net speedup for a given draft/target cost ratio.
+
+## Primary sources worth reading
+
+- Anthropic, [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
+- The [Model Context Protocol](https://modelcontextprotocol.io) documentation
+- Leviathan, Kalman and Matias, *Fast Inference from Transformers via Speculative Decoding* (2022)
+- Chen et al., *Accelerating Large Language Model Decoding with Speculative Sampling* (2023)
+- Kwon et al., *Efficient Memory Management for LLM Serving with PagedAttention* (2023)
