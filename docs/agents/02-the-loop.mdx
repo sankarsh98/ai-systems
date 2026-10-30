@@ -1,0 +1,76 @@
+---
+title: 2. The tool-use loop
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import loopSrc from '!!raw-loader!@site/code/agents/agent_loop.py';
+import toolsSrc from '!!raw-loader!@site/code/agents/tools.py';
+
+# 2. The tool-use loop
+
+## The protocol
+
+When you give the Claude API a list of tools, a response can contain **`tool_use` blocks**. Each one has an `id`, a tool `name`, and an `input` dictionary. Your job:
+
+1. Append the model's response to the conversation.
+2. Run each requested tool.
+3. Send the outputs back in **one** user message of `tool_result` blocks. Each result carries the `tool_use_id` of the request it answers.
+4. Repeat until the response has no `tool_use` blocks (`stop_reason` is not `"tool_use"`).
+
+If a tool fails, return the error text with `is_error: true`. Don't crash the loop. The model can often fix its own mistake once it sees what went wrong.
+
+## The tools
+
+Two small tools: a safe calculator (it parses arithmetic with `ast`, so there's no `eval`) and a note reader that raises an error for unknown notes.
+
+<CodeBlock language="python" title="code/agents/tools.py">{toolsSrc}</CodeBlock>
+
+## The loop
+
+`run_agent` is the whole agent. The model is a function you pass in, so the same loop works with a fake model offline and the real API.
+
+<CodeBlock language="python" title="code/agents/agent_loop.py">{loopSrc}</CodeBlock>
+
+## Run it offline
+
+`ScriptedModel` plays the model's part with fixed behavior, so you can watch the mechanics without an API key. It's **not** an intelligent model.
+
+```bash
+cd code/agents
+python agent_loop.py
+```
+
+```text
+  turn 1: read_note({'name': 'agents'}) -> An agent is a loop: the model picks a tool, we run it, and we show it the result.
+  turn 1: read_note({'name': 'nope'}) -> Error: "no note called 'nope'; available: ai, chess, agents"
+  turn 2: calculate({'expression': '19 * 23'}) -> 437
+The 'agents' note has 19 words, and 23x that is 437. (The 'nope' note doesn't exist, as the error said.)
+```
+
+Notice three things:
+
+- **Turn 1 has two tool calls at once.** Models can request several tools in one response. You return all results together.
+- **One call failed.** The error went back as a `tool_result` with `is_error: true`, and the loop carried on.
+- **The loop, not the model, enforces `max_turns`.** An agent with no turn limit can run forever and spend money.
+
+## Run it for real (optional)
+
+This part needs an API key, and I haven't been able to run it myself. The code follows the Anthropic Python SDK documentation, so treat it as untested.
+
+```bash
+export ANTHROPIC_API_KEY=...
+python agent_loop.py --real
+```
+
+`claude_model()` builds a client and calls `client.messages.create(model="claude-opus-5-5", max_tokens=16000, tools=..., messages=...)`. Expect the model to choose its own tool calls, so the output will differ from the scripted run.
+
+:::note The SDK can write the loop for you
+The Python SDK has a beta **tool runner** (`client.beta.messages.tool_runner` with the `@beta_tool` decorator) that runs this loop for you. Writing it by hand once, as above, is worth it because you'll recognize what the runner is doing.
+:::
+
+## Experiments
+
+1. Set `max_turns=1`. What does the function return, and why?
+2. Add a `word_count` tool. Update `ScriptedModel` to use it instead of splitting the string itself.
+3. Make `calculate` raise on `"2 ** 9999999"` before it hangs. What limit would you put on the exponent?
